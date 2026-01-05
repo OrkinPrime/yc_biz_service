@@ -1,0 +1,53 @@
+server:
+  port: 8081
+
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+  datasource:
+    # 1. 基础连接信息
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # serverTimezone=Asia/Shanghai: 解决时区差问题
+    # useSSL=false: 开发环境和老版本MySQL通常不需要SSL，避免报错
+    # allowPublicKeyRetrieval=true: 某些特定版本的 MySQL 8驱动连接 5.7 需要开启
+    url: jdbc:mysql://mysql-dev.12xue.com:3306/operation_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: rjgrid
+
+    # 2. 指定使用 Druid 连接池
+    type: com.alibaba.druid.pool.DruidDataSource
+
+    # 3. Druid 详细参数（稳健配置）
+    druid:
+      initial-size: 5       # 初始化时建立物理连接的个数
+      min-idle: 5           # 最小连接池数量
+      max-active: 20        # 最大连接池数量
+      max-wait: 60000       # 获取连接时最大等待时间，单位毫秒
+      time-between-eviction-runs-millis: 60000 # 间隔多久进行一次检测，检测需要关闭的空闲连接
+      min-evictable-idle-time-millis: 300000   # 一个连接在池中最小生存的时间
+      validation-query: SELECT 1 FROM DUAL     # 用来检测连接是否有效的sql
+      test-while-idle: true    # 建议配置为true，不影响性能，并且保证安全性
+      test-on-borrow: false    # 申请连接时执行validationQuery检测连接是否有效
+      test-on-return: false    # 归还连接时执行validationQuery检测连接是否有效
+      filters: stat,wall       # 开启监控(stat)和防火墙(wall)
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    # 开启控制台 SQL 日志打印 (开发阶段非常重要，上线可改为 impl)
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 开启驼峰命名自动转换 (user_name -> userName)，默认就是 true，显式写出来更放心
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      # 逻辑删除配置 (可选，0未删除，1已删除)
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
