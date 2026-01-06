@@ -16,10 +16,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,118 +33,111 @@ public class StatServiceImpl implements StatService {
     @Autowired
     private ChaptSettingMapper chaptSettingMapper;
 
+    // --- 新增 Mapper ---
+    @Autowired
+    private ClassInfoMapper classInfoMapper;
+    @Autowired
+    private GradeInfoMapper gradeInfoMapper;
+
     @Override
     public Page<TeacherFuncStatVO> searchStats(StatQueryDTO query) {
-        // ---------------------------------------------------------
-        // 1. 核心逻辑：获取该学校的教师ID列表 (UIDs)
-        // ---------------------------------------------------------
-
+        // 1. 获取该学校的教师ID列表 (UIDs)
         LambdaQueryWrapper<UserSchool> relationQuery = new LambdaQueryWrapper<>();
         relationQuery.select(UserSchool::getUid)
-                .eq(UserSchool::getSchoolid, query.getSchoolId());
-
-        // 【注意】请确认数据库里的值是否真的是 2 和 0
-        relationQuery.eq(UserSchool::getIdentitytype, 2);
-        relationQuery.eq(UserSchool::getStatus, 0);
+                .eq(UserSchool::getSchoolid, query.getSchoolId())
+                .eq(UserSchool::getIdentitytype, 2)
+                .eq(UserSchool::getStatus, 0);
 
         List<Object> uidObjs = userSchoolMapper.selectObjs(relationQuery);
-
         if (uidObjs == null || uidObjs.isEmpty()) {
-            // 【修正1】去掉 (Long) 强转，直接传 query.getPageNo() 即可
             return new Page<>(query.getPageNo(), query.getPageSize());
         }
-
-        // 这里的 Long.valueOf(obj.toString()) 写法是非常正确且安全的
         List<Long> schoolUids = uidObjs.stream()
                 .map(obj -> Long.valueOf(obj.toString()))
                 .collect(Collectors.toList());
 
-        // ---------------------------------------------------------
-        // 2. 准备查询时间范围
-        // ---------------------------------------------------------
+        // 2. 准备时间范围
         long startTs = 0;
         long endTs = System.currentTimeMillis() / 1000;
-
         if (StringUtils.hasText(query.getStartDate())) {
-            startTs = LocalDate.parse(query.getStartDate())
-                    .atStartOfDay(ZoneOffset.of("+8")).toEpochSecond();
+            startTs = LocalDate.parse(query.getStartDate()).atStartOfDay(ZoneOffset.of("+8")).toEpochSecond();
         }
         if (StringUtils.hasText(query.getEndDate())) {
-            endTs = LocalDate.parse(query.getEndDate())
-                    .plusDays(1).atStartOfDay(ZoneOffset.of("+8")).toEpochSecond() - 1;
+            endTs = LocalDate.parse(query.getEndDate()).plusDays(1).atStartOfDay(ZoneOffset.of("+8")).toEpochSecond() - 1;
         }
 
-        // ---------------------------------------------------------
         // 3. 分页查询 CourseBegin
-        // ---------------------------------------------------------
-        // 【修正2】去掉 (Long) 强转
         Page<CourseBegin> pageParam = new Page<>(query.getPageNo(), query.getPageSize());
         LambdaQueryWrapper<CourseBegin> courseQuery = new LambdaQueryWrapper<>();
-
         courseQuery.in(CourseBegin::getUid, schoolUids);
         courseQuery.ge(CourseBegin::getCreateTime, startTs);
         courseQuery.le(CourseBegin::getCreateTime, endTs);
-
         if (StringUtils.hasText(query.getTeacherName())) {
             courseQuery.like(CourseBegin::getRealname, query.getTeacherName());
         }
-
         courseQuery.orderByDesc(CourseBegin::getCreateTime);
 
         Page<CourseBegin> coursePage = courseBeginMapper.selectPage(pageParam, courseQuery);
         List<CourseBegin> courseList = coursePage.getRecords();
 
         if (courseList.isEmpty()) {
-            // 【修正3】去掉 (Long) 强转
             return new Page<>(query.getPageNo(), query.getPageSize());
         }
 
         // ---------------------------------------------------------
-        // 4. 准备辅助数据
+        // 4. 准备辅助数据 (批量查询以避免循环查库)
         // ---------------------------------------------------------
 
-        // 4.1 获取本页涉及的 teacherIds 和 subjectIds
         List<Long> pageUids = courseList.stream().map(CourseBegin::getUid).distinct().collect(Collectors.toList());
 
-        // 【新增】提取本页所有出现的学科ID (去重 + 非空过滤)
-        List<Long> subjectIds = courseList.stream()
-                .map(CourseBegin::getXkid)
-                .filter(id -> id != null)
+        // 4.1 提取 ClassId 并查询 ClassInfo
+        List<Long> classIds = courseList.stream()
+                .map(CourseBegin::getClassid)
+                .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
 
-        // 4.2 查功能记录 (保持不变)
+        Map<Long, ClassInfo> classInfoMap = new HashMap<>();
+        Map<Integer, GradeInfo> gradeInfoMap = new HashMap<>();
+
+        if (!classIds.isEmpty()) {
+            List<ClassInfo> classes = classInfoMapper.selectBatchIds(classIds);
+            classInfoMap = classes.stream().collect(Collectors.toMap(ClassInfo::getId, c -> c));
+
+            // 4.2 提取 GradeId 并查询 GradeInfo
+            List<Integer> gradeIds = classes.stream()
+                    .map(ClassInfo::getGradeid)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            if (!gradeIds.isEmpty()) {
+                List<GradeInfo> grades = gradeInfoMapper.selectBatchIds(gradeIds);
+                gradeInfoMap = grades.stream().collect(Collectors.toMap(GradeInfo::getId, g -> g));
+            }
+        }
+
+        // 4.3 查功能记录
         List<FuncItem> funcItems = funcItemMapper.selectList(new LambdaQueryWrapper<FuncItem>()
                 .in(FuncItem::getUid, pageUids)
                 .ge(FuncItem::getCreateTime, startTs)
                 .le(FuncItem::getCreateTime, endTs));
+        Map<Long, List<FuncItem>> funcMap = funcItems.stream().collect(Collectors.groupingBy(FuncItem::getUid));
 
-        Map<Long, List<FuncItem>> funcMap = funcItems.stream()
-                .collect(Collectors.groupingBy(FuncItem::getUid));
-
-        // 4.3 查学校作息 (保持不变)
-        List<SchoolTime> schoolTimes = schoolTimeMapper.selectList(new LambdaQueryWrapper<SchoolTime>()
+        // 4.4 查学校作息 (查询该校所有配置，后续在内存中过滤)
+        List<SchoolTime> allSchoolTimes = schoolTimeMapper.selectList(new LambdaQueryWrapper<SchoolTime>()
                 .eq(SchoolTime::getSchoolid, query.getSchoolId())
                 .orderByAsc(SchoolTime::getSort));
 
-        // ==================【新增：查询学科名称字典】==================
+        // 4.5 学科名称字典
+        List<Long> subjectIds = courseList.stream().map(CourseBegin::getXkid).filter(Objects::nonNull).distinct().collect(Collectors.toList());
         Map<Long, String> subjectMap = Collections.emptyMap();
         if (!subjectIds.isEmpty()) {
-            // 查询 te_chapt_setting 表
             List<ChaptSetting> settings = chaptSettingMapper.selectList(new LambdaQueryWrapper<ChaptSetting>()
-                    .eq(ChaptSetting::getSchoolid, query.getSchoolId()) // 必须限制学校，因为不同学校对同一个ID可能有不同叫法
-                    .in(ChaptSetting::getSubjectid, subjectIds));      // 只查本页涉及的学科
-
-            // 转为 Map<SubjectID, Name>
-            // 注意：如果同一个学校同一个ID有多个记录(比如分学段)，这里简单的取第一个，或者你可以根据业务逻辑去重
-            subjectMap = settings.stream()
-                    .collect(Collectors.toMap(
-                            ChaptSetting::getSubjectid,
-                            ChaptSetting::getName,
-                            (name1, name2) -> name1 // 如果有重复，取第一个
-                    ));
+                    .eq(ChaptSetting::getSchoolid, query.getSchoolId())
+                    .in(ChaptSetting::getSubjectid, subjectIds));
+            subjectMap = settings.stream().collect(Collectors.toMap(ChaptSetting::getSubjectid, ChaptSetting::getName, (v1, v2) -> v1));
         }
-        // ============================================================
 
         // ---------------------------------------------------------
         // 5. 组装 VO
@@ -161,32 +151,31 @@ public class StatServiceImpl implements StatService {
 
             vo.setSerialNumber(baseSerial + i);
             vo.setRealName(course.getRealname());
-
-            // ==================【新增赋值代码】==================
-            // 直接从 CourseBegin 取 bjmc (班级名称)
-            // 如果数据库里偶尔有 null，给个默认值空字符串
+            // 沿用 CourseBegin 中的班级名称
             vo.setClassName(course.getBjmc() != null ? course.getBjmc() : "");
-            // ==================================================
 
-            // ... 学科名称的处理逻辑保持不变 ...
             String subName = subjectMap.get(course.getXkid());
-            if (subName == null) {
-                subName = course.getXkid() != null ? String.valueOf(course.getXkid()) : "";
-            }
+            if (subName == null) subName = course.getXkid() != null ? String.valueOf(course.getXkid()) : "";
             vo.setSubjectName(subName);
-            // ============================================================
 
+            // 处理时间
             LocalDateTime courseTime = LocalDateTime.ofEpochSecond(course.getCreateTime(), 0, ZoneOffset.of("+8"));
             vo.setDateStr(courseTime.toLocalDate().toString());
-            vo.setPeriodName(matchPeriod(courseTime.toLocalTime(), schoolTimes));
 
+            // --- 核心修改：获取学段(xd) 和 季节(type) ---
+            Integer xd = resolveXd(course.getClassid(), classInfoMap, gradeInfoMap);
+            String seasonType = resolveSeasonType(courseTime.toLocalDate());
+
+            // 匹配节次 (传入过滤参数)
+            vo.setPeriodName(matchPeriodWithRules(courseTime.toLocalTime(), allSchoolTimes, xd, seasonType));
+
+            // 统计功能
             List<FuncItem> ops = funcMap.getOrDefault(course.getUid(), Collections.emptyList());
             countFunctions(vo, course, ops);
 
             resultList.add(vo);
         }
 
-        // 6. 返回结果
         Page<TeacherFuncStatVO> resultPage = new Page<>();
         resultPage.setCurrent(coursePage.getCurrent());
         resultPage.setSize(coursePage.getSize());
@@ -196,30 +185,101 @@ public class StatServiceImpl implements StatService {
         return resultPage;
     }
 
-    // --- 内部辅助方法 (保持不变) ---
-    private String matchPeriod(LocalTime courseTime, List<SchoolTime> times) {
-        if (times == null || times.isEmpty()) return "未知节次";
+    // ---------------------------------------------------------
+    // 辅助方法
+    // ---------------------------------------------------------
+
+    /**
+     * 解析学段
+     * 逻辑：CourseBegin(classid) -> ClassInfo(gradeid) -> GradeInfo(xd)
+     */
+    private Integer resolveXd(Long classId, Map<Long, ClassInfo> classMap, Map<Integer, GradeInfo> gradeMap) {
+        if (classId == null) return null;
+        ClassInfo classInfo = classMap.get(classId);
+        if (classInfo == null || classInfo.getGradeid() == null) return null;
+
+        GradeInfo gradeInfo = gradeMap.get(classInfo.getGradeid());
+        if (gradeInfo == null || gradeInfo.getXd() == null) return null;
+
+        // GradeInfo 中 xd 是 String (如 "21"), SchoolTime 中 xd 是 Integer
+        try {
+            return Integer.valueOf(gradeInfo.getXd());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 解析季节类型
+     * 中国惯例：
+     * Summer: 5月1日 - 9月30日 (劳动节到国庆节前)
+     * Winter: 10月1日 - 4月30日
+     */
+    private String resolveSeasonType(LocalDate date) {
+        int month = date.getMonthValue();
+        // 5,6,7,8,9月 为夏季时间
+        if (month >= 5 && month <= 9) {
+            return "summer";
+        } else {
+            return "winter";
+        }
+    }
+
+    /**
+     * 增强版节次匹配
+     * @param courseTime 上课时间
+     * @param allTimes 该校所有时间表
+     * @param xd 学段
+     * @param type 季节
+     */
+    private String matchPeriodWithRules(LocalTime courseTime, List<SchoolTime> allTimes, Integer xd, String type) {
+        if (allTimes == null || allTimes.isEmpty()) return "未知节次";
+
         DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
-        for (SchoolTime t : times) {
+
+        // 1. 过滤：只保留符合当前 学段 和 季节 的时间表
+        List<SchoolTime> validTimes = allTimes.stream()
+                .filter(t -> {
+                    // 如果时间表中 xd 为空，默认匹配所有；如果不为空，必须匹配
+                    boolean xdMatch = (t.getXd() == null) || (xd != null && t.getXd().equals(xd));
+                    // 如果时间表中 type 为空，默认匹配所有；如果不为空，必须匹配
+                    boolean typeMatch = (t.getType() == null) || (type != null && t.getType().equalsIgnoreCase(t.getType()));
+                    // 这里通常作息表存的是 "winter"/"summer"，如果不区分需根据数据实际情况调整
+                    // 如果数据库里 type 字段不区分 null，下面的逻辑更严谨：
+                    if (t.getType() != null && !t.getType().isEmpty()) {
+                        typeMatch = t.getType().equalsIgnoreCase(type);
+                    } else {
+                        typeMatch = true; // 通用时间表
+                    }
+                    return xdMatch && typeMatch;
+                })
+                .collect(Collectors.toList());
+
+        // 2. 匹配时间范围
+        for (SchoolTime t : validTimes) {
             try {
+                // 有些数据可能存的是 "8:00"，有些是 "08:00"，LocalTime.parse 默认需要补零，
+                // 建议数据库规范化，或者这里做简单的补零处理，这里假设数据格式标准 HH:mm
                 LocalTime stdStart = LocalTime.parse(t.getStart(), timeFmt);
                 LocalTime stdEnd = LocalTime.parse(t.getEnd(), timeFmt);
+
+                // 宽松匹配：开始前15分钟也算这节课
                 if (courseTime.isAfter(stdStart.minusMinutes(15)) && courseTime.isBefore(stdEnd)) {
                     return "第" + t.getSort() + "节";
                 }
             } catch (Exception e) {
-                // 忽略解析错误
+                // 忽略格式错误的数据
             }
         }
         return "其他时间";
     }
 
     private void countFunctions(TeacherFuncStatVO vo, CourseBegin course, List<FuncItem> ops) {
+        // 原有统计逻辑保持不变
         long start = course.getCreateTime();
-        // 这里的处理逻辑很好，避免了 NullPointerException
         long end = (course.getEndTime() == null) ? start + 2400 : Long.valueOf(course.getEndTime());
         if (end < start) {
-            end = start + end;
+            end = start + end; // 防御性处理
         }
 
         for (FuncItem op : ops) {

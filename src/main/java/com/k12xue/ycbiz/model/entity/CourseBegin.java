@@ -23,7 +23,7 @@ import java.io.Serializable;
  * @since 2026-01-05
  */
 @Data
-@TableName("k12.te_course_begin")
+@TableName("te_course_begin")
 public class CourseBegin implements Serializable {
 
     private static final long serialVersionUID = 1L;

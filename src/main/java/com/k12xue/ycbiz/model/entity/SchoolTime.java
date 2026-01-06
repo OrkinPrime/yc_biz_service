@@ -21,7 +21,7 @@ import java.io.Serializable;
  * @since 2026-01-05
  */
 @Data
-@TableName("k12.te_analysis_schooltime")
+@TableName("te_analysis_schooltime")
 public class SchoolTime implements Serializable {
 
     private static final long serialVersionUID = 1L;

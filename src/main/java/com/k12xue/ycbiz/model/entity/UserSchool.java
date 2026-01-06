@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 存储用户和学校对应关系
  *
@@ -14,8 +16,8 @@ import lombok.Data;
  */
 
 @Data
-@TableName("uia.uc_user_school")
-public class UserSchool {
+@TableName("uc_user_school")
+public class UserSchool implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;

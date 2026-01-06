@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.io.Serializable;
+
 
 /**
  * 科目信息
@@ -13,8 +15,10 @@ import lombok.Data;
  * @date 2026/1/5 17:14
  */
 @Data
-@TableName("k12.te_chapt_setting")
-public class ChaptSetting {
+@TableName("te_chapt_setting")
+public class ChaptSetting implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
