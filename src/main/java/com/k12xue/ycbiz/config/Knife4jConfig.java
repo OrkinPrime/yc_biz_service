@@ -10,6 +10,14 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
 
+/**
+ * 测试页配置
+ * 测试地址：<a href="http://localhost:8081/doc.html#/home">...</a>
+ * 如果默认8081端口进行了修改，记得修改
+ * @author Orkin_Prime
+ * @date 2026/1/7 15:04
+ */
+
 @Configuration
 @EnableSwagger2WebMvc
 public class Knife4jConfig {
@@ -20,7 +28,6 @@ public class Knife4jConfig {
                 .apiInfo(apiInfo())
                 .groupName("12xue-backend")
                 .select()
-                // 👇 这里一定要改成你自己的 Controller 包路径！
                 .apis(RequestHandlerSelectors.basePackage("com.k12xue.ycbiz.controller"))
                 .paths(PathSelectors.any())
                 .build();

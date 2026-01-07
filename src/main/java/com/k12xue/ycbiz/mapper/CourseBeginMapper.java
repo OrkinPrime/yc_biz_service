@@ -5,6 +5,12 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.k12xue.ycbiz.model.entity.CourseBegin;
 import org.apache.ibatis.annotations.Mapper;
 
+/**
+ * 课堂信息Mapper
+ *
+ * @author Orkin_Prime
+ * @date 2026/1/7 15:13
+ */
 @Mapper
 @DS("k12")
 public interface CourseBeginMapper extends BaseMapper<CourseBegin> {

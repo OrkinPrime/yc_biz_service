@@ -3,7 +3,11 @@ package com.k12xue.ycbiz.common;
 import lombok.Data;
 
 import java.io.Serializable;
-
+/**
+ * 响应结果类
+ * @author Orkin_Prime
+ * @date 2026/1/7 15:04
+ */
 @Data
 public class Result<T> implements Serializable {
     private Integer code; // 200成功，其他失败

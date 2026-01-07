@@ -7,7 +7,6 @@ import lombok.Data;
 
 import java.io.Serializable;
 
-
 /**
  * 科目信息
  *

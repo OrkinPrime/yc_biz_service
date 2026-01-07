@@ -42,7 +42,6 @@ public class GradeInfo implements Serializable {
     /**
      * 学校ID
      * DB类型: bigint(20)
-     * 策略：BigInt 映射为 Long，并防止前端精度丢失
      */
     @JsonSerialize(using = ToStringSerializer.class)
     private Long schoolid;
@@ -56,7 +55,6 @@ public class GradeInfo implements Serializable {
     /**
      * 创建时间
      * DB类型: int(11)
-     * 策略：秒级时间戳
      */
     private Integer createTime;
 

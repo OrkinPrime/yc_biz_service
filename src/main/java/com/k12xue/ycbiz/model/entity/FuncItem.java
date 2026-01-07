@@ -70,14 +70,12 @@ public class FuncItem implements Serializable {
      * 功能类型
      * DB类型: tinyint(1)
      * 说明: 1随机提问，2抢答，3限时答题，4组题，5分组教学，6拍照投影，7学生打分，8小组打分
-     * 策略：虽是 tinyint，但在业务中属于枚举状态，用 Integer 最方便
      */
     private Integer type;
 
     /**
      * 学科ID
      * DB类型: bigint(20)
-     * ⚠️ 风险：必须转 String
      */
     @JsonSerialize(using = ToStringSerializer.class)
     private Long subjectid;
@@ -115,7 +113,6 @@ public class FuncItem implements Serializable {
     /**
      * 创建时间
      * DB类型: int(11)
-     * 策略：这是 Unix 时间戳（秒），不要映射成 Date
      */
     private Long createTime;
 

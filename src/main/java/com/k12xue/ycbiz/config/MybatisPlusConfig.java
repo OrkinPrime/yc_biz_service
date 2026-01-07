@@ -1,11 +1,6 @@
 package com.k12xue.ycbiz.config;
 
-/**
- * MybatisPlus配置类
- *
- * @author Orkin_Prime
- * @date 2026/1/5 17:04
- */
+
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
@@ -14,8 +9,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * MyBatis Plus 配置类
- * 用于开启分页插件
+ * MybatisPlus配置类
+ *
+ * @author Orkin_Prime
+ * @date 2026/1/7 15:04
  */
 @Configuration
 public class MybatisPlusConfig {

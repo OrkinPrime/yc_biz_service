@@ -29,15 +29,13 @@ public class ClassInfo implements Serializable {
     /**
      * 班级ID (主键)
      * DB类型: bigint(20)
-     * ⚠️ 注意：SQL定义中默认值为 '0' 且非自增。
-     * 策略：使用 ASSIGN_ID (雪花算法) 或 INPUT，此处默认为 ASSIGN_ID。
      */
     @TableId(value = "id", type = IdType.ASSIGN_ID)
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     /**
-     * 用户ID (通常指创建者或负责人)
+     * 用户ID
      * DB类型: bigint(20)
      */
     @JsonSerialize(using = ToStringSerializer.class)
@@ -51,7 +49,7 @@ public class ClassInfo implements Serializable {
     private Long schoolid;
 
     /**
-     * 年级ID (字典表code)
+     * 年级ID
      * DB类型: int(10)
      */
     private Integer gradeid;
@@ -91,7 +89,7 @@ public class ClassInfo implements Serializable {
     /**
      * 状态
      * DB类型: tinyint(2)
-     * 注释：0 使用 -1 弃用 (重新分班的时候，班级状态全部变成弃用)
+     * 注释：0 使用 -1 弃用
      */
     private Integer status;
 

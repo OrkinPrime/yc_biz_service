@@ -37,7 +37,6 @@ public class School implements Serializable {
     /**
      * 区域ID
      * DB类型: bigint(20)
-     * ⚠️ 必须转字符串，防止精度丢失
      */
     @JsonSerialize(using = ToStringSerializer.class)
     private Long area;
@@ -45,7 +44,6 @@ public class School implements Serializable {
     /**
      * 学校ID
      * DB类型: bigint(20)
-     * ⚠️ 必须转字符串
      */
     @JsonSerialize(using = ToStringSerializer.class)
     @TableField("schoolid")
@@ -67,8 +65,6 @@ public class School implements Serializable {
      * 课堂类型
      * DB类型: tinyint(1)
      * 注释：3混合式课堂，2平板课堂，1卡片课堂
-     * 策略：这是多状态枚举，必须用 Integer
-     * ⚠️ 坑点：DB列名无下划线，必须指定 @TableField("coursetype")
      */
     @TableField("coursetype")
     private Integer coursetype;
@@ -91,7 +87,6 @@ public class School implements Serializable {
      * 是否设置校本资源banner
      * DB类型: tinyint(1)
      * 注释：0未设置，1设置
-     * ⚠️ 坑点：DB列名无下划线，必须指定 @TableField
      */
     @TableField("sourcebanner")
     private Integer sourcebanner;
@@ -112,19 +107,19 @@ public class School implements Serializable {
     private Long sort;
 
     /**
-     * 小学学制 (推测: Xiao Xue Xue Zhi)
+     * 小学学制
      * DB类型: tinyint(1)
      */
     private Integer xxxz;
 
     /**
-     * 初中学制 (推测: Chu Zhong Xue Zhi)
+     * 初中学制
      * DB类型: tinyint(1)
      */
     private Integer czxz;
 
     /**
-     * 高中学制 (推测: Gao Zhong Xue Zhi)
+     * 高中学制
      * DB类型: tinyint(1)
      */
     private Integer gzxz;
