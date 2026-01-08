@@ -7,7 +7,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>2.7.6</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
 
     <groupId>com.k12xue</groupId>
@@ -20,11 +20,10 @@
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <!-- 这里不需要再单独定义 spring-boot.version 了，因为 parent 已经定义了 -->
     </properties>
 
     <dependencies>
-        <!-- Web 模块 (版本号由 parent 自动管理) -->
+        <!-- Web 模块  -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -65,14 +64,14 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Mybatis Plus (第三方库，需要指定版本) -->
+        <!-- Mybatis Plus -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
             <version>3.5.3.1</version>
         </dependency>
 
-        <!-- 多数据源核心依赖 (第三方库，需要指定版本) -->
+        <!-- 多数据源核心依赖 -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>dynamic-datasource-spring-boot-starter</artifactId>
@@ -104,24 +103,21 @@
 
     <build>
         <plugins>
-            <!-- 编译插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <!-- 版本号可以省略，parent 会管理 -->
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
-            <!-- SpringBoot 打包插件 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>com.k12xue.ycbiz.YcBizServiceApplication</mainClass>
-                    <skip>false</skip> <!-- 注意：这里通常应该是 false，否则打出来的包不能运行 -->
+                    <skip>false</skip>
                 </configuration>
                 <executions>
                     <execution>

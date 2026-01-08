@@ -7,11 +7,14 @@ import com.alibaba.excel.enums.poi.HorizontalAlignmentEnum;
 import com.alibaba.excel.enums.poi.VerticalAlignmentEnum;
 import java.io.Serializable;
 
+/**
+ * 响应数据包
+ * @author Orkin_Prime
+ * @date 2026/1/8 8:53
+ */
 @Data
-// 1. 设置行高 (表头稍高，内容适中)
 @HeadRowHeight(30)
 @ContentRowHeight(25)
-// 2. 全局样式：垂直居中，水平居中 (数字和短文本居中看最舒服)
 @ContentStyle(horizontalAlignment = HorizontalAlignmentEnum.CENTER, verticalAlignment = VerticalAlignmentEnum.CENTER)
 @HeadStyle(horizontalAlignment = HorizontalAlignmentEnum.CENTER, verticalAlignment = VerticalAlignmentEnum.CENTER)
 public class TeacherFuncStatVO implements Serializable {
@@ -46,9 +49,9 @@ public class TeacherFuncStatVO implements Serializable {
     @ColumnWidth(15)
     private String duration;
 
-    // --- 统计数据 (列宽可以稍窄) ---
+    // --- 统计数据 ---
 
-    @ExcelProperty("限时答题") // 缩短标题以节省打印宽度
+    @ExcelProperty("限时答题")
     @ColumnWidth(12)
     private Integer type3Count = 0;
 

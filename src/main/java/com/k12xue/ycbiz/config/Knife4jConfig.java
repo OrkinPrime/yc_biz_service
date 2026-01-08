@@ -35,7 +35,7 @@ public class Knife4jConfig {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("永城一高业务统计后台 API")
+                .title("永城外国语课堂小功能使用统计 API")
                 .description("Spring Boot + MyBatis Plus 接口文档")
                 .version("1.0")
                 .build();
